@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createWishlistSchema, type CreateWishlistInput } from "@/app/_features/wishlists/schema";
+import { recordAuditLog } from "@/utils/audit/log";
 import { createSupabaseServerClient } from "@/utils/supabase/server";
 
 export async function createWishlist(input: CreateWishlistInput) {
@@ -39,6 +40,14 @@ export async function createWishlist(input: CreateWishlistInput) {
         listing_id: payload.listingId,
       });
   }
+
+  await recordAuditLog(supabase, {
+    userId: user.id,
+    action: "wishlist:create",
+    entity: "wishlist",
+    entityId: data.id,
+    meta: { title: payload.title, listing_id: payload.listingId },
+  });
 
   revalidatePath("/dashboard/wishlists");
 

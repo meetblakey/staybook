@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createListingSchema, type CreateListingInput, type UpdateListingInput, updateListingSchema } from "@/app/_features/listings/schema";
+import { recordAuditLog } from "@/utils/audit/log";
 import { createSupabaseServerClient } from "@/utils/supabase/server";
 
 const LISTING_REVALIDATE_PATHS = [
@@ -54,6 +55,7 @@ export async function createListing(input: CreateListingInput) {
       postal_code: payload.postalCode,
       amenities: payload.amenities,
       status: payload.status,
+      cancellation_policy_id: payload.cancellationPolicyId,
       location: toGeoJSONPoint(payload.coordinates),
     })
     .select("id")
@@ -63,6 +65,17 @@ export async function createListing(input: CreateListingInput) {
     console.error("Failed to create listing", error);
     throw new Error("Unable to create listing. Please try again.");
   }
+
+  await recordAuditLog(supabase, {
+    userId: user.id,
+    action: "listing:create",
+    entity: "listing",
+    entityId: data.id,
+    meta: {
+      status: payload.status,
+      cancellation_policy_id: payload.cancellationPolicyId,
+    },
+  });
 
   LISTING_REVALIDATE_PATHS.forEach((path) => revalidatePath(path));
 
@@ -105,6 +118,9 @@ export async function updateListing(input: UpdateListingInput) {
         case "serviceFee":
           updatePayload.service_fee = value;
           break;
+        case "cancellationPolicyId":
+          updatePayload.cancellation_policy_id = value;
+          break;
         case "addressLine1":
           updatePayload.address_line1 = value;
           break;
@@ -135,6 +151,14 @@ export async function updateListing(input: UpdateListingInput) {
     console.error("Failed to update listing", error);
     throw new Error("Unable to update listing. Please try again.");
   }
+
+  await recordAuditLog(supabase, {
+    userId: user.id,
+    action: "listing:update",
+    entity: "listing",
+    entityId: id,
+    meta: updatePayload,
+  });
 
   LISTING_REVALIDATE_PATHS.forEach((path) => revalidatePath(path));
   revalidatePath(`/listing/${id}`);
@@ -187,6 +211,14 @@ export async function uploadPhoto({
     console.error("Failed to record photo", error);
     throw new Error("Could not save photo metadata.");
   }
+
+  await recordAuditLog(supabase, {
+    userId: user.id,
+    action: "listing:photo_upload",
+    entity: "listing",
+    entityId: listingId,
+    meta: { path: relativePath, sort_order: sortOrder },
+  });
 
   revalidatePath(`/listing/${listingId}`);
   revalidatePath(`/dashboard/host/listings/${listingId}`);

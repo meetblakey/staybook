@@ -4,6 +4,7 @@ import { z } from "zod";
 import { calculateDetailedPrice } from "@/app/_lib/pricing";
 import { normalizeCurrency } from "@/app/_lib/currency";
 import type { PriceQuoteBreakdown } from "@/app/_features/pricing/types";
+import { getListingPricingContext } from "@/app/_features/listings/queries";
 import { getStripeClient, PLATFORM_FEE_BPS } from "@/app/_features/payments/stripe";
 import { createSupabaseServerClient } from "@/utils/supabase/server";
 
@@ -39,70 +40,6 @@ function createFakeProviderId() {
   return `fake_pi_${crypto.randomUUID()}`;
 }
 
-async function fetchPricingContext(listingId: string) {
-  const supabase = await createSupabaseServerClient();
-
-  const listingPromise = supabase
-    .from("listings")
-    .select(
-      "id, price_nightly, cleaning_fee, service_fee, currency, city, state, country, max_guests, status",
-    )
-    .eq("id", listingId)
-    .maybeSingle();
-
-  const priceRulesPromise = supabase
-    .from("listing_price_rules")
-    .select("*")
-    .eq("listing_id", listingId);
-
-  const calendarOverridesPromise = supabase
-    .from("calendar_overrides")
-    .select("*")
-    .eq("listing_id", listingId);
-
-  const feeRulePromise = supabase
-    .from("fee_rules")
-    .select("*")
-    .eq("listing_id", listingId)
-    .maybeSingle();
-
-  const taxRulesPromise = supabase
-    .from("tax_rules")
-    .select("*");
-
-  const exchangeRatesPromise = supabase
-    .from("exchange_rates")
-    .select("*")
-    .order("as_of", { ascending: false })
-    .limit(20);
-
-  const [listingRes, priceRulesRes, overridesRes, feeRulesRes, taxRulesRes, exchangeRatesRes] = await Promise.all([
-    listingPromise,
-    priceRulesPromise,
-    calendarOverridesPromise,
-    feeRulePromise,
-    taxRulesPromise,
-    exchangeRatesPromise,
-  ]);
-
-  if (listingRes.error || !listingRes.data) {
-    throw new Error(listingRes.error?.message || "Listing not found");
-  }
-
-  if (listingRes.data.status !== "published") {
-    throw new Error("Listing is not available for booking");
-  }
-
-  return {
-    listing: listingRes.data,
-    priceRules: priceRulesRes.data ?? [],
-    calendarOverrides: overridesRes.data ?? [],
-    feeRule: feeRulesRes.data ?? null,
-    taxRules: taxRulesRes.data ?? [],
-    exchangeRates: exchangeRatesRes.data ?? [],
-  };
-}
-
 export async function createPaymentIntentForBooking(
   rawInput: CreatePaymentIntentRequest,
   userId: string,
@@ -115,9 +52,12 @@ export async function createPaymentIntentForBooking(
     throw new Error("Check-out must be after check-in");
   }
 
-  const { listing, priceRules, calendarOverrides, feeRule, taxRules, exchangeRates } = await fetchPricingContext(
-    input.listingId,
-  );
+  const { listing, priceRules, calendarOverrides, feeRule, taxRules, exchangeRates } =
+    await getListingPricingContext(input.listingId);
+
+  if (listing.status !== "published") {
+    throw new Error("Listing is not available for booking");
+  }
 
   const breakdown = calculateDetailedPrice({
     listing,

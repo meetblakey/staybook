@@ -27,6 +27,7 @@ const baseListingSchema = z.object({
   amenities: z.array(z.string()).default([]),
   coordinates: coordinatesSchema,
   status: z.enum(["draft", "published", "snoozed", "paused", "deleted"]).default("draft"),
+  cancellationPolicyId: z.string().trim().default("flex"),
 });
 
 export const createListingSchema = baseListingSchema;

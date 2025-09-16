@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createBookingSchema, type CancelBookingInput, type CreateBookingInput, cancelBookingSchema } from "@/app/_features/bookings/schema";
+import { recordAuditLog } from "@/utils/audit/log";
 import { createSupabaseServerClient } from "@/utils/supabase/server";
 
 const BOOKING_REVALIDATE_PATHS = [
@@ -40,6 +41,19 @@ export async function createBooking(input: CreateBookingInput) {
     throw new Error("Unable to create booking. Dates may be unavailable.");
   }
 
+  await recordAuditLog(supabase, {
+    userId: user.id,
+    action: "booking:create",
+    entity: "booking",
+    meta: {
+      listing_id: payload.listingId,
+      check_in: payload.checkIn,
+      check_out: payload.checkOut,
+      guests: payload.guests,
+      total_price: payload.totalPrice,
+    },
+  });
+
   BOOKING_REVALIDATE_PATHS.forEach((path) => revalidatePath(path));
   revalidatePath(`/listing/${payload.listingId}`);
 
@@ -67,6 +81,13 @@ export async function cancelBooking(input: CancelBookingInput) {
     console.error("Failed to cancel booking", error);
     throw new Error("Unable to cancel booking. Please try again.");
   }
+
+  await recordAuditLog(supabase, {
+    userId: user.id,
+    action: "booking:cancel",
+    entity: "booking",
+    entityId: payload.bookingId,
+  });
 
   BOOKING_REVALIDATE_PATHS.forEach((path) => revalidatePath(path));
 

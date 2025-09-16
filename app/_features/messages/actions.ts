@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { sendMessageSchema, type SendMessageInput } from "@/app/_features/messages/schema";
+import { recordAuditLog } from "@/utils/audit/log";
 import { createSupabaseServerClient } from "@/utils/supabase/server";
 
 export async function sendMessage(input: SendMessageInput) {
@@ -57,6 +58,13 @@ export async function sendMessage(input: SendMessageInput) {
   }
 
   await supabase.from("threads").update({ last_message_at: new Date().toISOString() }).eq("id", threadId);
+
+  await recordAuditLog(supabase, {
+    userId: user.id,
+    action: "message:send",
+    entity: "thread",
+    entityId: threadId,
+  });
 
   revalidatePath("/dashboard/messages");
 
