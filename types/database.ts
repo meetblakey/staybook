@@ -7,6 +7,15 @@ export type Json =
   | Json[];
 
 type BookingKind = "booking" | "block";
+type PriceRuleKind =
+  | "weekend_markup"
+  | "seasonal"
+  | "length_of_stay"
+  | "last_minute"
+  | "early_bird"
+  | "extra_guest"
+  | "pet_fee";
+type ReportKind = "listing" | "message" | "user" | "review";
 
 export type Database = {
   public: {
@@ -35,6 +44,497 @@ export type Database = {
         };
         Relationships: [];
       };
+      cancellation_policies: {
+        Row: {
+          id: string;
+          name: string;
+          rules: Json;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          rules: Json;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          rules?: Json;
+        };
+        Relationships: [];
+      };
+      listing_price_rules: {
+        Row: {
+          id: string;
+          listing_id: string;
+          kind: Database["public"]["Enums"]["price_rule_kind"];
+          date_range: string | null;
+          min_nights: number | null;
+          threshold_days: number | null;
+          amount: string | number;
+          is_percent: boolean | null;
+          extra_guest_threshold: number | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          listing_id: string;
+          kind: Database["public"]["Enums"]["price_rule_kind"];
+          date_range?: string | null;
+          min_nights?: number | null;
+          threshold_days?: number | null;
+          amount: string | number;
+          is_percent?: boolean | null;
+          extra_guest_threshold?: number | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          listing_id?: string;
+          kind?: Database["public"]["Enums"]["price_rule_kind"];
+          date_range?: string | null;
+          min_nights?: number | null;
+          threshold_days?: number | null;
+          amount?: string | number;
+          is_percent?: boolean | null;
+          extra_guest_threshold?: number | null;
+          created_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "listing_price_rules_listing_id_fkey";
+            columns: ["listing_id"];
+            referencedRelation: "listings";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      calendar_overrides: {
+        Row: {
+          id: string;
+          listing_id: string;
+          date: string;
+          price: string | number;
+        };
+        Insert: {
+          id?: string;
+          listing_id: string;
+          date: string;
+          price: string | number;
+        };
+        Update: {
+          id?: string;
+          listing_id?: string;
+          date?: string;
+          price?: string | number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "calendar_overrides_listing_id_fkey";
+            columns: ["listing_id"];
+            referencedRelation: "listings";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      tax_rules: {
+        Row: {
+          id: string;
+          country: string | null;
+          state: string | null;
+          city: string | null;
+          occupancy_tax_pct: string | number | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          country?: string | null;
+          state?: string | null;
+          city?: string | null;
+          occupancy_tax_pct?: string | number | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          country?: string | null;
+          state?: string | null;
+          city?: string | null;
+          occupancy_tax_pct?: string | number | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      fee_rules: {
+        Row: {
+          id: string;
+          listing_id: string | null;
+          service_fee_bps: number | null;
+          cleaning_fee: string | number | null;
+          security_deposit: string | number | null;
+          extra_guest_fee: string | number | null;
+          pet_fee: string | number | null;
+        };
+        Insert: {
+          id?: string;
+          listing_id?: string | null;
+          service_fee_bps?: number | null;
+          cleaning_fee?: string | number | null;
+          security_deposit?: string | number | null;
+          extra_guest_fee?: string | number | null;
+          pet_fee?: string | number | null;
+        };
+        Update: {
+          id?: string;
+          listing_id?: string | null;
+          service_fee_bps?: number | null;
+          cleaning_fee?: string | number | null;
+          security_deposit?: string | number | null;
+          extra_guest_fee?: string | number | null;
+          pet_fee?: string | number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fee_rules_listing_id_fkey";
+            columns: ["listing_id"];
+            referencedRelation: "listings";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      payment_intents: {
+        Row: {
+          id: string;
+          booking_id: string | null;
+          provider: string;
+          provider_id: string | null;
+          client_secret: string | null;
+          status: string | null;
+          amount_total: number;
+          currency: string;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          booking_id?: string | null;
+          provider?: string;
+          provider_id?: string | null;
+          client_secret?: string | null;
+          status?: string | null;
+          amount_total: number;
+          currency?: string;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          booking_id?: string | null;
+          provider?: string;
+          provider_id?: string | null;
+          client_secret?: string | null;
+          status?: string | null;
+          amount_total?: number;
+          currency?: string;
+          created_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payment_intents_booking_id_fkey";
+            columns: ["booking_id"];
+            referencedRelation: "bookings";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      payout_accounts: {
+        Row: {
+          user_id: string;
+          stripe_account_id: string | null;
+          status: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          user_id: string;
+          stripe_account_id?: string | null;
+          status?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          user_id?: string;
+          stripe_account_id?: string | null;
+          status?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payout_accounts_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      payouts: {
+        Row: {
+          id: string;
+          booking_id: string | null;
+          stripe_transfer_id: string | null;
+          amount: number;
+          status: string | null;
+          scheduled_for: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          booking_id?: string | null;
+          stripe_transfer_id?: string | null;
+          amount: number;
+          status?: string | null;
+          scheduled_for?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          booking_id?: string | null;
+          stripe_transfer_id?: string | null;
+          amount?: number;
+          status?: string | null;
+          scheduled_for?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payouts_booking_id_fkey";
+            columns: ["booking_id"];
+            referencedRelation: "bookings";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      verification_requests: {
+        Row: {
+          id: string;
+          user_id: string;
+          doc_front_path: string | null;
+          doc_back_path: string | null;
+          status: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          doc_front_path?: string | null;
+          doc_back_path?: string | null;
+          status?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          doc_front_path?: string | null;
+          doc_back_path?: string | null;
+          status?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "verification_requests_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "verification_requests_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      saved_searches: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string | null;
+          filters: Json;
+          notify: boolean | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title?: string | null;
+          filters: Json;
+          notify?: boolean | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string | null;
+          filters?: Json;
+          notify?: boolean | null;
+          created_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "saved_searches_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      wishlist_collaborators: {
+        Row: {
+          wishlist_id: string;
+          user_id: string;
+          role: "owner" | "editor" | "viewer";
+        };
+        Insert: {
+          wishlist_id: string;
+          user_id: string;
+          role?: "owner" | "editor" | "viewer";
+        };
+        Update: {
+          wishlist_id?: string;
+          user_id?: string;
+          role?: "owner" | "editor" | "viewer";
+        };
+        Relationships: [
+          {
+            foreignKeyName: "wishlist_collaborators_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "wishlist_collaborators_wishlist_id_fkey";
+            columns: ["wishlist_id"];
+            referencedRelation: "wishlists";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      reports: {
+        Row: {
+          id: string;
+          reporter_id: string | null;
+          kind: Database["public"]["Enums"]["report_kind"];
+          target_id: string;
+          reason: string | null;
+          status: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          reporter_id?: string | null;
+          kind: Database["public"]["Enums"]["report_kind"];
+          target_id: string;
+          reason?: string | null;
+          status?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          reporter_id?: string | null;
+          kind?: Database["public"]["Enums"]["report_kind"];
+          target_id?: string;
+          reason?: string | null;
+          status?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reports_reporter_id_fkey";
+            columns: ["reporter_id"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      exchange_rates: {
+        Row: {
+          base: string;
+          quote: string;
+          rate: string | number;
+          as_of: string;
+        };
+        Insert: {
+          base?: string;
+          quote: string;
+          rate: string | number;
+          as_of: string;
+        };
+        Update: {
+          base?: string;
+          quote?: string;
+          rate?: string | number;
+          as_of?: string;
+        };
+        Relationships: [];
+      };
+      external_calendars: {
+        Row: {
+          id: string;
+          listing_id: string;
+          url: string;
+          kind: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          listing_id: string;
+          url: string;
+          kind?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          listing_id?: string;
+          url?: string;
+          kind?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "external_calendars_listing_id_fkey";
+            columns: ["listing_id"];
+            referencedRelation: "listings";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      audit_logs: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          action: string;
+          entity: string | null;
+          entity_id: string | null;
+          meta: Json | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          action: string;
+          entity?: string | null;
+          entity_id?: string | null;
+          meta?: Json | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string | null;
+          action?: string;
+          entity?: string | null;
+          entity_id?: string | null;
+          meta?: Json | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
       listings: {
         Row: {
           address_line1: string | null;
@@ -56,6 +556,7 @@ export type Database = {
           price_nightly: string | number;
           property_type: string | null;
           postal_code: string | null;
+          cancellation_policy_id: string | null;
           room_type: string | null;
           search: string | null;
           service_fee: string | number | null;
@@ -83,6 +584,7 @@ export type Database = {
           price_nightly: string | number;
           property_type?: string | null;
           postal_code?: string | null;
+          cancellation_policy_id?: string | null;
           room_type?: string | null;
           search?: string | null;
           service_fee?: string | number | null;
@@ -110,6 +612,7 @@ export type Database = {
           price_nightly?: string | number;
           property_type?: string | null;
           postal_code?: string | null;
+          cancellation_policy_id?: string | null;
           room_type?: string | null;
           search?: string | null;
           service_fee?: string | number | null;
@@ -122,6 +625,12 @@ export type Database = {
             foreignKeyName: "listings_host_id_fkey";
             columns: ["host_id"];
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "listings_cancellation_policy_id_fkey";
+            columns: ["cancellation_policy_id"];
+            referencedRelation: "cancellation_policies";
             referencedColumns: ["id"];
           }
         ];
@@ -429,13 +938,23 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      host_metrics: {
+        Row: {
+          host_id: string | null;
+          avg_rating: number | null;
+          cancel_rate: number | null;
+          response_rate: number | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       [_ in never]: never;
     };
     Enums: {
       booking_kind: BookingKind;
+      price_rule_kind: PriceRuleKind;
+      report_kind: ReportKind;
     };
     CompositeTypes: {
       [_ in never]: never;
